@@ -3,25 +3,14 @@ PraDigi Sushi Chef
 Scripts to import content from prathamopenschool.org website into Kolibri Studio.
 
 
-Design
-------
-The following google spreadsheet are used to determine placement of content within the channel:
-  - English https://docs.google.com/spreadsheets/d/1kPOnTVZ5vwq038x1aQNlA2AFtliLIcc2Xk5Kxr852mg/edit#gid=1812185465
-  - All other languages https://docs.google.com/spreadsheets/d/1kPOnTVZ5vwq038x1aQNlA2AFtliLIcc2Xk5Kxr852mg/edit#gid=342105160
-
-The following corrections are applied to content before uploading to Kolibri:
-https://docs.google.com/spreadsheets/d/1kPOnTVZ5vwq038x1aQNlA2AFtliLIcc2Xk5Kxr852mg/edit#gid=93933238
-
-
-
 
 Install
 -------
 
 ### 1. get the code
 
-    git clone https://github.com/learningequality/sushi-chef-pradigi.git
-    cd sushi-chef-pradigi/
+    git clone https://github.com/prathamopenschool1/pratham-content-integration-script.git
+    cd pradigisushichef/
 
 ### 2. setup a python virtual environment
 
@@ -38,7 +27,7 @@ To run the chef script, follow these steps:
 ### 1. Go the the project directory
 
 
-    cd sushi-chef-pradigi
+    cd pradigisushichef
 
 ### 2. Activate the virtual env
 
@@ -53,7 +42,7 @@ To run the chef script, follow these steps:
 
 ### 4. Run the chef script:
 
-    ./sushichef.py -v --reset --thumbnails --token=<your_token> --stage
+    python pradigichef.py --token=<your_token>
 
 
 This commands takes 19+ hours the first time it runs and performs the following:
@@ -103,7 +92,7 @@ descriptions of each content node. The PRATHAM variant is maintained by Pratham.
 
 To run the Learning Equality (LE) variant use the following command:
 
-    ./sushichef.py -v --reset --thumbnails --token=<your_token> --stage  variant=LE
+    python pradigichef.py --token=<your_token>  variant=LE
 
 Note the extra command line option `varian=LE` passed in to select the LE variant.
 
@@ -113,10 +102,10 @@ Note the extra command line option `varian=LE` passed in to select the LE varian
 To run the chef in the background using (useful when running on a remote server via ssh):
 
     ssh chef@vader
-        cd sushi-chef-pradigi
+        cd pradigisushichef
             rm -rf .webcache
             source venv/bin/activate
-            nohup ./sushichef.py -v --reset --thumbnails --token=<your_token> --stage variant=LE &
+            nohup python pradigichef.py --token=<your_token> --stage variant=LE &
 
 The output of the script will be saved to the local file `nohup.out`, which you
 can "follow" by using `tail -f nohup.out` to monitor the chef run.
@@ -147,11 +136,5 @@ The games extracted from the `KhelPuri` folder can be included in the `Fun`,
 `Mathematics`, `Language`, and `English` subjects according to the structure gsheet.
 
 
-
-
-Backlog
--------
-
-Cross check with all games from here:  http://www.prathamopenschool.org/CourseContent/Games/
 
 
