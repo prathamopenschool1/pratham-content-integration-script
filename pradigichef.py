@@ -143,8 +143,6 @@ if not os.path.exists(CONVERTED_MP3_FILES_DIR):
     print("done1")
 
 
-# / @DJ: move lines  /\   /\   /\   to top of file
-
 def download_and_convert_wav_file(wav_url):
     """
     Kolibri AudioNode only support .mp3 files and not .wav, so we must convert.
@@ -345,13 +343,13 @@ def should_compress_video(video_web_resource):
 
 
 # Test the wrt_to_ricecooker_tree function on samples of each content kind
-RESOURCE_SAMPLES = [
-    'sample_PrathamVideoResource.json',
-    'sample_PrathamZipResource.json',
-    'sample_PrathamPdfResource.json',
-    'sample_PrathamAudioResource.json',
-    'sample_Topic.json',
-]
+# RESOURCE_SAMPLES = [
+#     'sample_PrathamVideoResource.json',
+#     'sample_PrathamZipResource.json',
+#     'sample_PrathamPdfResource.json',
+#     'sample_PrathamAudioResource.json',
+#     'sample_Topic.json',
+# ]
 #
 # for resource_sample in RESOURCE_SAMPLES:
 #     print('\n\nLoading sample from', resource_sample)
@@ -364,7 +362,7 @@ RESOURCE_SAMPLES = [
 #         pprint(ricecooker_subtree)
 #         time.sleep(1)
         # return ricecooker_subtree
-
+#
 # import sys
 #
 # sys.exit(1)  # EXIT here; do not try to run chef
@@ -443,7 +441,7 @@ class PraDigiChef(JsonTreeChef):
 
 
 # CLI
-#############################################################################
+############################################################################
 
 if __name__ == '__main__':
     pradigi_chef = PraDigiChef()
