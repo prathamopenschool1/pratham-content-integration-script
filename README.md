@@ -14,8 +14,8 @@ Install
 
 ### 2. setup a python virtual environment
 
-    virtualenv -p python3 venv
-    source venv/bin/activate
+    virtualenv -p python3 prathamenv
+    source prathamenv/bin/activate
     pip install -r requirements.txt
 
 
@@ -105,8 +105,3 @@ To run the chef in the background using (useful when running on a remote server 
 
 The output of the script will be saved to the local file `nohup.out`, which you
 can "follow" by using `tail -f nohup.out` to monitor the chef run.
-
-
-
-
-
