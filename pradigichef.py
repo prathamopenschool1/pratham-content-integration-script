@@ -3,13 +3,18 @@
 
 from cachecontrol.heuristics import OneDayCache
 import copy
+import pysnooper
 import json
 import logging
 import os
 import requests
 import shutil
 import time
+import subprocess
 from pprint import pprint
+from ricecooker.utils.html import download_file
+from file_converter import (download_and_convert_m4v_file, download_and_convert_png_file,
+                            download_and_convert_wav_file, download_and_convert_mpeg_file)
 from le_utils.constants import content_kinds, file_types, licenses
 from le_utils.constants.languages import getlang
 from ricecooker.chefs import JsonTreeChef
@@ -18,11 +23,11 @@ from ricecooker.config import LOGGER
 from ricecooker.utils.caching import FileCache, CacheControlAdapter
 from ricecooker.utils.jsontrees import write_tree_to_json_tree
 from ricecooker.classes.files import Image
-
 from transform import HTML5APP_ZIPS_LOCAL_DIR
 from transform import get_zip_file
 from transform import get_phet_zip_file
 from corrections import should_skip_file
+
 
 PRADIGI_DOMAIN = 'prathamopenschool.org'
 PRADIGI_SOURCE_ID__VARIANT_PRATHAM = 'pradigi-videos-and-games'  # Pratham internal
@@ -114,65 +119,15 @@ PRADIGI_STRINGS = {
 # RICECOOKER JSON TRANSFORMATIONS
 ################################################################################
 
-
-# with open("chefdata/trees/pradigi_hindi_web_resource_tree.json", 'r', encoding='utf-8') as jtree:
-#     web_resource_tree = json.load(jtree)
-# web_resource_tree_children = web_resource_tree['children']
-
 LANGUAGE_CODE_LOOKUP = {}
 for lang_code, lang_info in PRADIGI_STRINGS.items():
     LANGUAGE_CODE_LOOKUP[lang_info["language_en"]] = lang_code
 
 print("LANGUAGE_CODE_LOOKUP=", LANGUAGE_CODE_LOOKUP)
 print('LANGUAGE_CODE_LOOKUP["Hindi"]=', LANGUAGE_CODE_LOOKUP["Hindi"])
-# time.sleep(1)
-
-import subprocess
-from ricecooker.utils.html import download_file
-
-# Wav files download
-DOWNLOADED_WAV_FILES_DIR = os.path.join("chefdata", "downloadedwavs")
-print(DOWNLOADED_WAV_FILES_DIR, 'DOWNLOADED_WAV_FILES_DIR')
-if not os.path.exists(DOWNLOADED_WAV_FILES_DIR):
-    os.makedirs(DOWNLOADED_WAV_FILES_DIR, exist_ok=True)
-    print("done")
-CONVERTED_MP3_FILES_DIR = os.path.join("chefdata", "convertedmp3s")
-print(CONVERTED_MP3_FILES_DIR, 'CONVERTED_MP3_FILES_DIR')
-if not os.path.exists(CONVERTED_MP3_FILES_DIR):
-    os.makedirs(CONVERTED_MP3_FILES_DIR, exist_ok=True)
-    print("done1")
 
 
-def download_and_convert_wav_file(wav_url):
-    """
-    Kolibri AudioNode only support .mp3 files and not .wav, so we must convert.
-    """
-    wav_filename = wav_url.split('/')[-1]  # e.g. something.wav
-    wav_path = os.path.join(DOWNLOADED_WAV_FILES_DIR, wav_filename)
-    print("done3")
-
-    # 1. DOWNLOAD
-    download_file(wav_url, DOWNLOADED_WAV_FILES_DIR)
-    print("don4")
-
-    # 2. CONVERT
-    mp3_filename = wav_filename.replace('.wav', '.mp3')
-    mp3_path = os.path.join(CONVERTED_MP3_FILES_DIR, mp3_filename)
-    print(mp3_filename, mp3_path)
-    if not os.path.exists(mp3_path):
-        try:
-            command = ["ffmpeg", "-i", wav_path, "-acodec", "mp3", "-ac", "2",
-                       "-ab", "64k", "-y", "-hide_banner", "-loglevel", "warning", mp3_path]
-            subprocess.check_call(command)
-            print("Successfully converted wav file to mp3")
-        except subprocess.CalledProcessError:
-            print("Problem converting " + wav_url)
-            return None
-
-    # Return path of converted mp3 file
-    return mp3_path
-
-
+@pysnooper.snoop()
 def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
     """
     Transforms web resource subtree `tree` into a ricecooker tree of topics nodes,
@@ -199,14 +154,12 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
             if filter_fn(child):
                 try:
                     ricecooker_node = wrt_to_ricecooker_tree(child, filter_fn=filter_fn)
-                    # print(ricecooker_node['source_id'], 'ricecooker_node')
                     if ricecooker_node:
                         new_source_id = ricecooker_node['source_id']
                         # print(new_source_id, 'new_source_id')
                         if new_source_id not in source_ids_seen_so_far:
                             topic_node['children'].append(ricecooker_node)
                             source_ids_seen_so_far.append(new_source_id)
-                            # print(source_ids_seen_so_far, 'source_ids_seen_so_far')
                         else:
                             print('Skipping node with duplicate source_id', ricecooker_node)
                 except Exception as e:
@@ -214,7 +167,6 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
                                  (child['cont_title'], child['age_group'], e))
                     print(e)
                     pass
-        # print(topic_node, 'topic')
         return topic_node
     elif kind == 'PrathamVideoResource':
         thumbnail = tree['cont_thumburl'] if 'cont_thumburl' in tree else None
@@ -232,7 +184,9 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
         if video_url.endswith('.MP4'):
             video_url = video_url.replace('.MP4', '.mp4')
         elif video_url.endswith('.m4v'):
-            video_url = video_url.replace('.m4v', '.mp4')
+            video_url = download_and_convert_m4v_file(video_url)
+        elif video_url.endswith('.png') or video_url.endswith('.jpg') or video_url.endswith('.jpeg'):
+            video_url = download_and_convert_png_file(video_url)
         video_file = dict(
             file_type=file_types.VIDEO,
             path=video_url,
@@ -241,7 +195,6 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
         if should_compress_video(tree):
             video_file['ffmpeg_settings'] = {"crf": 28}  # average quality
         video_node['files'].append(video_file)
-        # print(video_node, 'video_node')
         return video_node
 
     elif kind == 'PrathamAudioResource':
@@ -260,6 +213,8 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
         print(audio_url, 'audiourl')
         if audio_url.endswith('.wav'):
             audio_url = download_and_convert_wav_file(audio_url)
+        elif audio_url.endswith('.mpeg'):
+            audio_url = download_and_convert_mpeg_file(audio_url)
         elif audio_url.endswith('.MP3'):
             audio_url = audio_url.replace('.MP3', '.mp3')
         audio_file = dict(
@@ -296,7 +251,6 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
             language=LANGUAGE_CODE_LOOKUP[tree['cont_lang']],
         )
         html5_node['files'].append(html5zip_file)
-        # print(html5_node, 'zipnode')
         return html5_node
 
     elif kind == 'PrathamPdfResource' or kind == 'story_resource_page':
@@ -317,7 +271,6 @@ def wrt_to_ricecooker_tree(tree, filter_fn=lambda node: True):
             language=LANGUAGE_CODE_LOOKUP[tree['cont_lang']],
         )
         pdf_node['files'].append(pdf_file)
-        # print(pdf_node, 'pdf')
         return pdf_node
 
     else:
@@ -343,13 +296,13 @@ def should_compress_video(video_web_resource):
 
 
 # Test the wrt_to_ricecooker_tree function on samples of each content kind
-RESOURCE_SAMPLES = [
-    'sample_PrathamVideoResource.json',
-    'sample_PrathamZipResource.json',
-    'sample_PrathamPdfResource.json',
-    # 'sample_PrathamAudioResource.json',
-    'sample_Topic.json',
-]
+# RESOURCE_SAMPLES = [
+#     'sample_PrathamVideoResource.json',
+#     'sample_PrathamZipResource.json',
+#     'sample_PrathamPdfResource.json',
+#     # 'sample_PrathamAudioResource.json',
+#     'sample_Topic.json',
+# ]
 
 # for resource_sample in RESOURCE_SAMPLES:
 #     print('\n\nLoading sample from', resource_sample)
@@ -379,15 +332,6 @@ class PraDigiChef(JsonTreeChef):
     """
     RICECOOKER_JSON_TREE = 'pradigi_ricecooker_json_tree.json'
 
-    # def build_subtree():
-    #     with open("chefdata/trees/smallnode.json", 'r', encoding='utf-8') as jtree:
-    #         web_resource_tree = json.load(jtree)
-    #         web_resource_tree_children = web_resource_tree['children']
-    #         for lang_subtree in web_resource_tree_children:
-    #             ricecooker_subtree = wrt_to_ricecooker_tree(lang_subtree)
-    #             print(ricecooker_subtree, 'rcs')
-    #         return ricecooker_subtree
-
 
     def pre_run(self, args, options):
         """
@@ -404,7 +348,7 @@ class PraDigiChef(JsonTreeChef):
         else:
             # Pratham ETL (used to import content from website into Pratham app)
             # channel_id = f9da12749d995fa197f8b4c0192e7b2c
-            channel_name = 'Pratham PraDigi'
+            channel_name = 'PraDigi Pratham New'
             # channel_source_id = PRADIGI_SOURCE_ID__VARIANT_PRATHAM
             channel_source_id = PRADIGI_SOURCE_ID__VARIANT_PRATHAM + '_testing'
 
@@ -417,15 +361,19 @@ class PraDigiChef(JsonTreeChef):
             language='mul',
             children=[],
         )
-        with open("chefdata/trees/pradigi_hindi_web_resource_tree.json", 'r', encoding='utf-8') as jtree:
-            web_resource_tree = json.load(jtree)
-            web_resource_tree_children = web_resource_tree['children']
-            for lang_subtree in web_resource_tree_children:
-                ricecooker_subtree = wrt_to_ricecooker_tree(lang_subtree)
-                ricecooker_json_tree['children'].append(ricecooker_subtree)
-        print(ricecooker_json_tree, 'ricecooker_json_tree')
-        json_tree_path = self.get_json_tree_path()
-        write_tree_to_json_tree(json_tree_path, ricecooker_json_tree)
+        try:
+            with open("chefdata/trees/smallnode.json", 'r', encoding='utf-8') as jtree:
+                web_resource_tree = json.load(jtree)
+                web_resource_tree_children = web_resource_tree['children']
+                for lang_subtree in web_resource_tree_children:
+                    ricecooker_subtree = wrt_to_ricecooker_tree(lang_subtree)
+                    ricecooker_json_tree['children'].append(ricecooker_subtree)
+            print(ricecooker_json_tree, 'ricecooker_json_tree')
+            json_tree_path = self.get_json_tree_path()
+            write_tree_to_json_tree(json_tree_path, ricecooker_json_tree)
+        except Exception as e:
+            print(e)
+            pass
 
     def run(self, args, options):
         print('options=', options, flush=True)

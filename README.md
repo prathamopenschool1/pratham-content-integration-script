@@ -74,10 +74,6 @@ but doing the following steps:
 Note this will take 15+ hours again since we have to redo all the download and
 conversion steps.
 
-The `sushichef.py` optional argument `--update` will force re-downloading all files
-and clear the local cache directory of zip files (`chefdata/zipfiles`) but will
-not clear web caches, which needs to be done manually.
-
 IMPORTANT: We recommend that you run `rm -rf .webcache` and `rm -rf cache.sqlite`
 manually every time the website changes.
 
@@ -110,30 +106,6 @@ To run the chef in the background using (useful when running on a remote server 
 The output of the script will be saved to the local file `nohup.out`, which you
 can "follow" by using `tail -f nohup.out` to monitor the chef run.
 
-
-
-Content Structure Logic
------------------------
-Excel document provides the template for the `Age Group > Subject` structure that
-is repeated within each language. The columns in the sheet are:
-  - Game Name instead of Name on gamerepo (before lang underscore)
-  - Get full game namelist
-  - Extract known games from webpage
-  - Take from (if a resource needs to be taken from another language)
-
-The content of each subject folder is taken from the top-level website menu,
-the yellow horizontal bar with links:
-![](./chefdata/pradigi_subject_structure.png)
-
-Special treatment is required for dropdown menus--we ignore the dropdown parent
-and instead treat the submenu items as top-level subjects.
-
-The resources under Games are handled differently depending on the age group:
-  - `KhelBadi` is used instead of the `3-6 years` subfolder
-  - `KhelPuri` are included only in the `6-10 years` subfolder
-
-The games extracted from the `KhelPuri` folder can be included in the `Fun`,
-`Mathematics`, `Language`, and `English` subjects according to the structure gsheet.
 
 
 
