@@ -133,5 +133,5 @@ def get_all_json(content_id):
 catalog_tree = json_parent_tree()
 
 # save it to a file for further processing
-with open(join(TREES_DATA_DIR, 'pradigi_Assamese_web_resource_tree.json'), 'w') as jsonf:
+with open(join(TREES_DATA_DIR, 'pradigi_web_resource_json_tree.json'), 'w') as jsonf:
     json.dump(catalog_tree, jsonf, indent=2, ensure_ascii=False)
