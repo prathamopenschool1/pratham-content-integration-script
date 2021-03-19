@@ -67,7 +67,7 @@ pbr==5.4.5
 pdf2image==1.11.0
 pexpect==4.7.0
 pickleshare==0.7.5
-Pillow==5.4.1
+Pillow==8.1.1
 pluggy==0.13.1
 pressurecooker==0.0.28
 prometheus-client==0.7.1
