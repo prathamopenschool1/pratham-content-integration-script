@@ -47,7 +47,7 @@ kiwisolver==1.2.0
 le-pycaption==2.2.0a1
 le-utils==0.1.24
 lockfile==0.12.2
-lxml==4.5.1
+lxml==4.9.1
 MarkupSafe==1.1.1
 matplotlib==2.2.3
 mistune==0.8.4
